@@ -46,6 +46,6 @@ files. Both are available from [oridb](http://cerevisiae.oridb.org/)
    anaysis results are written to `results`.
    
 > [!NOTE]
-> `kitr` required [pandoc](https://pandoc.org/) to be installed.
+> `kitr` requires [pandoc](https://pandoc.org/) to be installed.
 
 	`sh render.R`
