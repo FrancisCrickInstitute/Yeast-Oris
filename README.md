@@ -45,7 +45,7 @@ files. Both are available from [oridb](http://cerevisiae.oridb.org/)
 4. Run the analysis script to generate the html analysis report and figures. All
    anaysis results are written to `results`.
    
-[!NOTE]
-`kitr` required [pandoc](https://pandoc.org/) to be installed.
+> [!NOTE]
+> `kitr` required [pandoc](https://pandoc.org/) to be installed.
 
 	`sh render.R`
