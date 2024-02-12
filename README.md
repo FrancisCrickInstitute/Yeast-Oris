@@ -8,7 +8,7 @@ Function](https://www.biorxiv.org/content/10.1101/2024.01.10.575016v1)
 In short we characterised the position and orientation of ORC binding
 motifs relative to annotated origins of replication (OOR) in the yeast genome.
 
-Please see `results/analyse.html and the paper for the analysis details.
+Please see `results/analyse.html` and the paper for the analysis details.
 
 ## Instructions
 
