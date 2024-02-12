@@ -31,7 +31,10 @@ files. Both are available from [oridb](http://cerevisiae.oridb.org/)
 
 3. Initiate the R environment. Select option `1: Restore the project
    from the lockfile.` if promted by renv. We used `R-4.0.3`
-   for the analysis so this binary needs to be available on `$PATH`
+   for the analysis so this binary needs to be available on
+   `$PATH`. Please see the [renv
+   documentaion](https://rstudio.github.io/renv/articles/renv.html)
+   for help setting up renv.
    
    ```
    R
@@ -39,7 +42,10 @@ files. Both are available from [oridb](http://cerevisiae.oridb.org/)
    ```
    
    
-4. Run the analysis script to generate the Rmd report and figures. All
-   anaysis results are written to `results`
+4. Run the analysis script to generate the html analysis report and figures. All
+   anaysis results are written to `results`.
+   
+[!NOTE]
+`kitr` required [pandoc](https://pandoc.org/) to be installed.
 
 	`sh render.R`
