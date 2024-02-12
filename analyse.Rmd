@@ -35,10 +35,10 @@ best match and average for each position across the 400 origins.
 ## Analysis steps
 
 1. We obtained yeast OOR sequences from Oridb. We removed the duplicate entry ARS302. 
-2. We mapped the ROC PWM to the OOR sequences.
-3. We removed OORs with zero ROC hits and multiple maximum scoring ROC hits.
-4. We annotated the ROC elements for each OOR. We labelled the maximum scoring ROC
-   hit as the A-element and all ROCs downstream and in
+2. We mapped the ORC PWM to the OOR sequences.
+3. We removed OORs with zero ORC hits and multiple maximum scoring ORC hits.
+4. We annotated the ORC elements for each OOR. We labelled the maximum scoring ORC
+   hit as the A-element and all ORCs downstream and in
    the opposite orientation as B-elements.
 5. We counted the number of B-elements per OOR.
 6. We removed OORs with zero B-elements.
@@ -54,7 +54,7 @@ best match and average for each position across the 400 origins.
 11. We removed all B-elements with a score < this threshold.
 12. We calculated the mean distance from the A-element to the first
     B-element.
-13. We created spreadsheets containing the annotated ROCs and all ROC hits. 
+13. We created spreadsheets containing the annotated ORCs and all ORC hits. 
 14. We plotted all filtered B-elements per OOR ordered by the maximum
     scoring B-element.
 15. We plotted the sum of all filtered B-elements per base-pair across
@@ -83,9 +83,9 @@ SCORE_THRESHOLD <- 10
 options(bitmapType='cairo')
 ```
 
-# ROC PWM
+# ORC PWM
 
-We read in the probability ROC PWM matrix and transformed it into a PWM
+We read in the probability ORC PWM matrix and transformed it into a PWM
 object. The maximum match score possible for this PWM is 25.9222.
 
 The `toPWM()` function expands the probability matrix by assuming 50
@@ -96,12 +96,12 @@ balanced A,C,T and G background probabilities (0.25 each).
 priorProbs = prior.params/sum(prior.params)
 
 ```{r roc_pwm}
-pwm_file <- file.path( "data", "ROC_PWM_text.txt" )
-ROC_motif <- read.delim( file = pwm_file, sep = "\t" ) %>%
+pwm_file <- file.path( "data", "ORC_PWM_text.txt" )
+ORC_motif <- read.delim( file = pwm_file, sep = "\t" ) %>%
     t( )
-ROC_motif
-ROC_pwm = toPWM( ROC_motif )
-maxScore( ROC_pwm$pwm )
+ORC_motif
+ORC_pwm = toPWM( ORC_motif )
+maxScore( ORC_pwm$pwm )
 ```
 
 # OOR sequences
@@ -135,7 +135,7 @@ OOR_length_dist_gg <- data.frame( OOR_length = width( target_seqs ) ) %>%
 print( OOR_length_dist_gg )
 ```
 
-# Run ROC PWM search
+# Run ORC PWM search
 
 We ran a PWM search against the OOR sequences. We applied a minimum
 match score threshold of 0% to obtain all possible hits. This percentage score is
@@ -143,11 +143,11 @@ the ratio of the hit score over the max score for the PWM represented
 as a percentage (see above).
 
 ```{r pwm_search,fig.width=10}
-ROC_matches_raw <- map( 1:length( target_seqs ), function( seq_i ) {
-    hit_f <- matchPWM( ROC_pwm$pwm, target_seqs[[ seq_i ]], with.score = TRUE, min.score = 0 )
+ORC_matches_raw <- map( 1:length( target_seqs ), function( seq_i ) {
+    hit_f <- matchPWM( ORC_pwm$pwm, target_seqs[[ seq_i ]], with.score = TRUE, min.score = 0 )
     if( length( hit_f ) > 0 )
         mcols( hit_f )$strand <- 1
-    hit_r <- matchPWM( reverseComplement( ROC_pwm$pwm ), target_seqs[[ seq_i ]],
+    hit_r <- matchPWM( reverseComplement( ORC_pwm$pwm ), target_seqs[[ seq_i ]],
                       with.score = TRUE, min.score = "0%" )
     if( length( hit_r ) > 0 )
         mcols( hit_r )$strand <- -1
@@ -160,31 +160,31 @@ ROC_matches_raw <- map( 1:length( target_seqs ), function( seq_i ) {
 } ) %>%
     setNames( names( target_seqs ) )
 
-OOR_regions2names_df <- data.frame( fasta_name = names( ROC_matches_raw ) ) %>%
+OOR_regions2names_df <- data.frame( fasta_name = names( ORC_matches_raw ) ) %>%
     left_join( OOR_bed_df, by = "fasta_name" )
-names( ROC_matches_raw ) <- OOR_regions2names_df$name
+names( ORC_matches_raw ) <- OOR_regions2names_df$name
 ```
 
 # Annotate A and B elements
 
-For each OOR we identified the A-element as the highest scoring ROC match. We
+For each OOR we identified the A-element as the highest scoring ORC match. We
 labelled all downstream elements in the opposite orientation to the
 A-element as B-elements.
 
-We removed two OORs with multiple maximum ROC matches since we could not
-identify the true ROC A-element.
+We removed two OORs with multiple maximum ORC matches since we could not
+identify the true ORC A-element.
 
 We also removed 18 OORs with zero B-elements.
 
 ```{r filter_multi_max_rocs}
-max_filter <- ROC_matches_raw %>%
+max_filter <- ORC_matches_raw %>%
     map( function( df ) sum( df$score == max( df$score ) ) ) %>%
     unlist( )
-ROC_matches_raw <- ROC_matches_raw[ max_filter == 1 ] %>%
+ORC_matches_raw <- ORC_matches_raw[ max_filter == 1 ] %>%
     map( mutate, midpoint = (start + ((end-start)/2)) )
 ```
 ```{r annotated_elements}
-ROC_matches <- ROC_matches_raw %>%
+ORC_matches <- ORC_matches_raw %>%
     map( function( df ) {
         a_element <- df %>%
             filter( score == max( score ) )
@@ -201,17 +201,17 @@ ROC_matches <- ROC_matches_raw %>%
             ungroup( )
     } )
 ## remove OORs with zero B-elements
-b_element_count <- ROC_matches %>%
+b_element_count <- ORC_matches %>%
     map( function( df ) sum( df$element == "B-element" ) ) %>%
    unlist( )
-ROC_matches <- ROC_matches[ b_element_count > 0 ]
+ORC_matches <- ORC_matches[ b_element_count > 0 ]
 ```
 
 # Positive control - ARS416
 
 We used ARS416 to define the distance from the A-element to the
 primary B-element (score > 10, 43 bp, match boundary to
-boundary). The ROC A and B-elements for ARS416 are shown in the table
+boundary). The ORC A and B-elements for ARS416 are shown in the table
 below.
 
 We counted the number of OORs with a primary B-element <= 43 bp, 43 >
@@ -222,9 +222,9 @@ with a score > 10 in each region. These results are shown below (score > 10).
 ```{r ARS416_b_element_boundaries}
 ARS416_boundary <- 43+8+9
 outer_boundary <- 400
-ROC_matches$ARS416 %>% DT::datatable( rownames = FALSE )
+ORC_matches$ARS416 %>% DT::datatable( rownames = FALSE )
 
-ROC_matches %>%
+ORC_matches %>%
     map( function( df ) {
         df %>%
             filter( element == "B-element" & score > SCORE_THRESHOLD ) %>%
@@ -250,7 +250,7 @@ Please note the 80% is calculated from the filtered OOR set where OORs
 with zero B-elements or multiple A-elements have been removed.
 
 ```{r max_b_element_rank_plot}
-plotdat <- ROC_matches %>%
+plotdat <- ORC_matches %>%
     map( filter, element == "B-element" ) %>%
     map( filter, score == max( score ) ) %>%
     map( filter, row_number( ) == 1 ) %>%
@@ -281,7 +281,7 @@ inclusion threshold `r score_thr_80` calculated above. The value and
 distribution are shown below.
 
 ```{r mean_b_element_per_oor}
-b_elements_n <- ROC_matches %>%
+b_elements_n <- ORC_matches %>%
     map( filter, element == "B-element" ) %>%
     map( filter, score >= score_thr_80 ) %>%
     map( nrow ) %>%
@@ -303,7 +303,7 @@ We calculated the distance to the first B-element with a score above
 the `r score_thr_80` threshold calculated above. This value is printed below.
 
 ```{r dist_to_first_b}
-belement_dist_plotdat <- ROC_matches %>%
+belement_dist_plotdat <- ORC_matches %>%
     map( filter, element == "B-element" ) %>%
     map( filter, score >= score_thr_80 ) %>%
     map( arrange, distance ) %>%
@@ -323,36 +323,36 @@ print( belement_dist_gg )
 
 # Output data
 
-We wrote A and B-element annotated ROC matches and raw ROC matches to
+We wrote A and B-element annotated ORC matches and raw ORC matches to
 an Excel file. There are two worksheets, **AB-elements** contains the
 annotated A and B-elements in long format. The column definitions for these data are
-shown below. **all_ROC_hits** contains all reported ROC matches with a
+shown below. **all_ORC_hits** contains all reported ORC matches with a
 subset of the columns described below.
 
-The file can be downloaded [here](AB-element_ROC_OOR_data.xlsx)
+The file can be downloaded [here](AB-element_ORC_OOR_data.xlsx)
 
 * **OOR_id** - ARSxxx ID from OriDB.
-* **start** - start position of ROC hit.
-* **end** - end position of ROC hit.
-* **width** - width of ROC hit.
-* **score** - ROC match score.
-* **stand** - orientation of ROC hit.
+* **start** - start position of ORC hit.
+* **end** - end position of ORC hit.
+* **width** - width of ORC hit.
+* **score** - ORC match score.
+* **stand** - orientation of ORC hit.
 * **seq_length** - Length of OOR sequence.
-* **element** - ROC is an A or B element.
+* **element** - ORC is an A or B element.
 * **distance** - Distance between the inner boundaries of the A and
   B-elements.
 * **pass_80pc_thr** - Flag to indicate whether the B-element passes the 80%
   inclusion score threshold derived above.
 
 ```{r output}
-dbase_l <- list( 'AB-elements' = ROC_matches %>%
+dbase_l <- list( 'AB-elements' = ORC_matches %>%
                      bind_rows( .id = "OOR_id" ) %>%
                      mutate( pass_80pc_thr = score >= score_thr_80 ),
-                 all_ROC_hits = ROC_matches_raw %>%
+                 all_ORC_hits = ORC_matches_raw %>%
                      bind_rows( .id = "OOR_id" ) )
 
 dbase_l %>%
-    write.xlsx( "AB-element_ROC_OOR_data.xlsx" )
+    write.xlsx( "AB-element_ORC_OOR_data.xlsx" )
 ```
                                        
 # AB-element dotplot
@@ -364,7 +364,7 @@ maximum scoring B-element.
 A pdf version of the plot can be downloaded [here](ab-element_dotplot.pdf)
 
 ```{r cluster_oor}
-max_score_b_dist_ord <- ROC_matches %>%
+max_score_b_dist_ord <- ORC_matches %>%
     map( filter, element == "B-element" ) %>%
     map( filter, score == max( score ) ) %>%
     map( filter, row_number( ) == 1 ) %>%
@@ -374,7 +374,7 @@ max_score_b_dist_ord <- ROC_matches %>%
     sort( )
 ```
 ```{r dotplot_ab_element_per_oor,fig.height=8}
-dotplot_df <- ROC_matches %>%
+dotplot_df <- ORC_matches %>%
     bind_rows( .id = "OOR_id" ) %>%
     filter( element == "B-element" ) %>%
     mutate( pass_80pc_thr = score >= score_thr_80 ) %>%
@@ -411,7 +411,7 @@ dev.off( )
 # Mean score profile plot
 
 We aligned and orientated each OOR around its A-element. We took the
-mean of the ROC match scores per base for all B-elements across all aligned
+mean of the ORC match scores per base for all B-elements across all aligned
 OORs. This plot is shown below.
 
 A pdf version of the plot can be downloaded [here](B-elements_sum_profile_plot.pdf)
@@ -421,7 +421,7 @@ xscale <- seq( 0, 400, by = 25 )
 xscale[ xscale == 125 ]  <- 118
 xscale[ xscale == 150 ]  <- 148
 
-ROC_matches_flipped <- ROC_matches %>%
+ORC_matches_flipped <- ORC_matches %>%
     map( function( df ) {
         a_element_df <- df %>%
             filter( element == "A-element" )
@@ -440,14 +440,14 @@ ROC_matches_flipped <- ROC_matches %>%
         }
     } )
 
-max_b_element_coor <- ROC_matches_flipped %>%
+max_b_element_coor <- ORC_matches_flipped %>%
     map( function( df ) max( df$end ) ) %>%
     unlist( ) %>%
     max( )
 
-roc_mat <- matrix( 0, nrow = length( ROC_matches_flipped ), ncol = max_b_element_coor )
+roc_mat <- matrix( 0, nrow = length( ORC_matches_flipped ), ncol = max_b_element_coor )
 
-coors_vec <- map( ROC_matches_flipped, function( df ) {
+coors_vec <- map( ORC_matches_flipped, function( df ) {
     df %>%
         rowwise( ) %>%
         mutate( coor = list( start:end ) ) %>%
@@ -455,12 +455,12 @@ coors_vec <- map( ROC_matches_flipped, function( df ) {
         unlist( )
 } )
     
-score_vec <- map( ROC_matches_flipped, function( df ) {
+score_vec <- map( ORC_matches_flipped, function( df ) {
     rep( df$score, each = 17 )
 } )
 
-OOR_ind <- sapply( 1:length( ROC_matches_flipped ), function( ind ) {
-    rep( ind, ( nrow( ROC_matches_flipped[[ ind ]] ) * 17 ) )
+OOR_ind <- sapply( 1:length( ORC_matches_flipped ), function( ind ) {
+    rep( ind, ( nrow( ORC_matches_flipped[[ ind ]] ) * 17 ) )
 } ) %>%
     unlist( )
 
@@ -477,7 +477,7 @@ gg <- plotdat %>%
     geom_line( ) +
     scale_x_continuous( breaks = xscale ) +
     labs( x = "A-B element distance / bp",
-         y = "mean ROC PWM score" ) +
+         y = "mean ORC PWM score" ) +
     theme(
         axis.line = element_line( ),
         panel.grid.major = element_blank( ),
